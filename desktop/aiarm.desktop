@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=智能分拣
+Comment=
+Exec=/home/zonesion/catkin_ws/src/aiarm/bin/aiarm.sh
+Icon=
+Terminal=true
+StartupNotify=false
+Name[zh_CN]=aiarm
