@@ -258,11 +258,11 @@ class RealsenseCamera(object):
           print("Incomplete object depth data!")
           return -1                
 
-    def LocObject(self,wait=20,err=0.006):                            #目标识别及稳定性确认
+    def LocObject(self,wait=20,err=0.003,x_factor=1.0):                            #目标识别及稳定性确认
       stTime = time.time()
       __lastcam_pos = []
       while  len(__lastcam_pos)<5:
-          __camera_pos = self.__locObject()                
+          __camera_pos = self.__locObject()               
           if __camera_pos == -1 :
               if wait != None and time.time()-stTime > wait:
                   return None
@@ -286,7 +286,7 @@ class RealsenseCamera(object):
           sumz += Zc
       num=len(__lastcam_pos)
       #稳定的相机坐标系
-      camera_pos=[sumx/num,sumy/num,sumz/num]    
+      camera_pos=[sumx/num*x_factor,sumy/num,sumz/num]    
       #相机坐标系转换为世界坐标系    
       pos=self.camera2world(camera_pos)
       return pos
@@ -307,7 +307,7 @@ if __name__ == '__main__':
     cam=RealsenseCamera()
     while True:
       pos=cam.LocObject()
-      print(pos)
-      time.sleep(1)
+      # print(pos)
+      # time.sleep(5)
 
     
