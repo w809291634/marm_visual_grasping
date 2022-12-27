@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
 ##############################################################################################
@@ -49,9 +49,9 @@ class AiArm(Arm):
     def __init__(self,g_open):
         super(AiArm,self).__init__(g_open,gripper_ty=this.gripper_ty,arm_debug=False)        
         self.tf_listener = tf.TransformListener()
-        vnodeData_service = threading.Thread(target=self.VnodeData_to_app)
-        vnodeData_service.setDaemon(True)
-        vnodeData_service.start()
+        # vnodeData_service = threading.Thread(target=self.VnodeData_to_app)
+        # vnodeData_service.setDaemon(True)
+        # vnodeData_service.start()
 
 if __name__ == '__main__':
     def quit(signum, frame):

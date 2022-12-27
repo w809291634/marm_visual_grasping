@@ -1,0 +1,45 @@
+{
+    "configurations": [
+      {
+        "name": "run release",
+        "type": "cppdbg",
+        "request": "launch",
+        "program": "${workspaceFolder}/vnode/xarm/release/vnode-xarm",
+        "args": ["-r", "-debug"],
+        "stopAtEntry": false,
+        "cwd": "${workspaceFolder}/vnode/xarm/release",
+        "environment": [],
+        "externalConsole": false,
+        "MIMode": "gdb",
+        "setupCommands": [
+            {
+                "description": "为 gdb 启用整齐打印",
+                "text": "-enable-pretty-printing",
+                "ignoreFailures": true
+            }
+        ],
+        "preLaunchTask": "make"
+      },
+      {
+        "name": "run debug",
+        "type": "cppdbg",
+        "request": "launch",
+        "program": "${workspaceFolder}/vnode/xarm/debug/vnode-xarmD",
+        "args": ["-r", "-debug"],
+        "stopAtEntry": true,
+        "cwd": "${workspaceFolder}/vnode/xarm/debug",
+        "environment": [],
+        "externalConsole": false,
+        "MIMode": "gdb",
+        "setupCommands": [
+          {
+              "description": "为 gdb 启用整齐打印",
+              "text": "-enable-pretty-printing",
+              "ignoreFailures": true
+          }
+        ],
+        "preLaunchTask": "make debug"
+      }
+
+    ]
+  }

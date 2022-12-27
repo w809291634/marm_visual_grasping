@@ -12,16 +12,13 @@ import tf
 from std_msgs.msg import Int32,Int16,Int32MultiArray
 from copy import deepcopy
 import math
-this = sys.modules[__name__]
 import sys   
 import signal
 import platform
 from moveit_simple_grasps.srv import GenerateSolutions
 from marm_controller.srv import *
 #机械臂调试
-
 import yaml
-import sys
 this = sys.modules[__name__]
 
 this.config_path="/home/zonesion/catkin_ws/src/marm_controller/config/config.yaml"

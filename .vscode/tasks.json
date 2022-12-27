@@ -1,0 +1,51 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+      {
+        "type": "shell",
+        "label": "make debug",
+        "command": "make",
+        "args": [
+          "BUILD_VER=DEBUG"
+        ],
+        "options": {
+          "cwd": "${workspaceFolder}/vnode/xarm"
+        },
+        "group": "build"
+      },
+      {
+        "type": "shell",
+        "label": "make",
+        "command": "make",
+        "args": [],
+        "options": {
+          "cwd": "${workspaceFolder}/vnode/xarm"
+        },
+        "group": "build",
+        "problemMatcher": []
+      },
+      {
+        "type": "shell",
+        "label": "show value ",
+        "command": "make",
+        "args": [
+          "mytest"
+        ],
+        "options": {
+          "cwd": "${workspaceFolder}/vnode/xarm"
+        },
+        "group": "build"
+      },
+      {
+        "type": "shell",
+        "label": "make clean",
+        "command": "make clean",
+        "args": [],
+        "options": {
+          "cwd": "${workspaceFolder}/vnode/xarm"
+        },
+        "group": "build"
+      }
+    ]
+  }
+  

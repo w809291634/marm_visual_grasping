@@ -1,17 +1,17 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # -*- coding: utf-8 -*-
+
+import rospy
 import os
 import sys
-import tf                                           #tf转换库
+import tf         
 import cvwin
-import rospy
 import cv2
 import threading
 import time
 import numpy as np
 import copy
 from collections import OrderedDict
-from obj_detection_rk3588 import detection
 import pyrealsense2 as rs
 from std_msgs.msg import String
 from geometry_msgs.msg import PointStamped, Pose
@@ -46,6 +46,7 @@ def max_word(lt):
 
 class RealsenseCamera(object):
     def __init__(self, MARGIN_PIX=7):
+      from obj_detection_rk3588 import detection
       self.findObj = detection.YoloV5RKNNDetector("wooden_medicine")  #初始化目标检测类
       self.MARGIN_PIX = MARGIN_PIX
       self.window_name='camera'
@@ -75,7 +76,7 @@ class RealsenseCamera(object):
                               'height': self.intr.height, 'width': self.intr.width,
                               'depth_scale': self.profile.get_device().first_depth_sensor().get_depth_scale()
                               }
-          # rospy.logwarn(camera_parameters)
+          # print(camera_parameters)
           # 保存深度参数
           align_to = rs.stream.color                              #统一对齐到彩色相机
           align = rs.align(align_to)
@@ -87,7 +88,7 @@ class RealsenseCamera(object):
         #   self.stopCamera()
         print(e)
         sys.exit()
-      # rospy.logwarn(self.depth_intrin)
+      # print(self.depth_intrin)
 
     def camera_data(self):
       # 图像对齐
@@ -249,7 +250,7 @@ class RealsenseCamera(object):
           pos_center=(pix_pos[0] + pix_pos[2] / 2, pix_pos[1] + pix_pos[3] / 2 )         #中心点
           depth_center= self.Depth_data(pos_center,self.MARGIN_PIX,self.MARGIN_PIX)      #pos像素坐标(x,y)
       else:
-          rospy.logwarn("Target detection error!")
+          print("Target detection error!")
           return -1  
       if depth_center!=-1 :
           print("Center pixel:",pos_center,"center depth:",depth_center) 
@@ -257,51 +258,36 @@ class RealsenseCamera(object):
           camera_pos=self.pixel2camera_api(pos_center[0],pos_center[1],depth_center) 
           return camera_pos     
       else:
-          rospy.logwarn("Incomplete object depth data!")
+          print("Incomplete object depth data!")
           return -1                
 
-    def LocObject(self,wait=20):                            #目标识别及稳定性确认
+    def LocObject(self,wait=20,err=0.006):                            #目标识别及稳定性确认
       stTime = time.time()
-      __lastTaget = []
-      while  len(__lastTaget)<5:
-          __camera_pos = self.__locObject()                    #相机坐标系
+      __lastcam_pos = []
+      while  len(__lastcam_pos)<5:
+          __camera_pos = self.__locObject()                 #相机坐标系
           if __camera_pos == -1 :
               if wait != None and time.time()-stTime > wait:
                   return None
               continue
           stTime = time.time()
-          if len(__lastTaget) == 0:
-              __lastTaget = [(pos, size)]
+          if len(__lastcam_pos) == 0:
+              __lastcam_pos = [__camera_pos]
               continue
           
-          if abs(pos.point.x - __lastTaget[-1][0].point.x) < 0.006 and \
-                  abs(pos.point.y - __lastTaget[-1][0].point.y) < 0.006 and \
-                  abs(pos.point.z - __lastTaget[-1][0].point.z) < 0.006 and \
-                  abs(size[0] - __lastTaget[-1][1][0]) < 0.01 and \
-                  abs(size[1] - __lastTaget[-1][1][1]) < 0.01 :
-              __lastTaget.append((pos, size))
+          if abs(__camera_pos[0] - __lastcam_pos[-1][0]) < err and \
+                  abs(__camera_pos[1] - __lastcam_pos[-1][1]) < err and \
+                  abs(__camera_pos[2] - __lastcam_pos[-1][2]) < err :
+              __lastcam_pos.append(__camera_pos)
           else:
-              __lastTaget = [(pos, size)]
+              __lastcam_pos = [__camera_pos]
               
       sumx = sumy = sumz = 0
-      size_w = size_h = 0
-      for (pos,size) in __lastTaget:
-          sumx += pos.point.x
-          sumy += pos.point.y
-          sumz += pos.point.z
-          size_w += size[0]
-          size_h += size[1]
-
-      x = sumx / len(__lastTaget)
-      y = sumy / len(__lastTaget)
-      z = sumz / len(__lastTaget)
-      w = size_w / len(__lastTaget)
-      h = size_h / len(__lastTaget)
-              
-              
-    
-    
-              
+      for (Xc,Yc,Zc) in __lastcam_pos:
+          sumx += Xc
+          sumy += Yc
+          sumz += Zc
+      num=len(__lastcam_pos)
       camera_pos=(sumx/num,sumy/num,sumz/num)         #稳定的相机坐标系下的目标
       pos="%.3f/%.3f/%.3f"%(camera_pos[0],camera_pos[1],camera_pos[2])
       print(pos)
@@ -310,9 +296,18 @@ class RealsenseCamera(object):
       self.pipeline.stop()
 
 if __name__ == '__main__':
-  cam=RealsenseCamera()
-  while True:
-    cam.arm_LocObject()
-    time.sleep(1)
+    import signal
+    def quit(signum, frame):
+        print('')
+        print('EXIT APP') 
+        sys.exit()
+
+    signal.signal(signal.SIGINT, quit)                                
+    signal.signal(signal.SIGTERM, quit)
+    rospy.init_node('REALSENSE2', log_level=rospy.INFO )
+    cam=RealsenseCamera()
+    while True:
+      cam.LocObject()
+      time.sleep(1)
 
     

@@ -1,0 +1,21 @@
+{
+    "files.associations": {
+      "unistd.h": "c",
+      "ros-sensor.h": "c",
+      "ros-service.h": "c",
+      "*.tcc": "c",
+      "fstream": "c",
+      "istream": "c",
+      "ostream": "c",
+      "thread": "c",
+      "condition_variable": "c",
+      "pthread.h": "c",
+      "zxbee.h": "c",
+      "cstdio": "c",
+      "fcntl.h": "c",
+      "zxbee-inf.h": "c"
+    },
+    "python.pythonPath": "/usr/bin/python",
+    "editor.tabSize": 2,
+    "editor.detectIndentation":false
+}
