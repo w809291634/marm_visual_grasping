@@ -30,7 +30,8 @@ with open(this.config_path, "r") as f:
 ##############################################################################################
 # 应用配置参数
 ##############################################################################################
-this.g_open=config["g_open"]          # 机械臂夹具打开角度
+# this.g_open=config["g_open"]          # 机械臂夹具打开角度
+this.g_open=-20
 this.gripper_ty= True                 # 夹具极性
 this.g_range=[-130,130]               # 底层夹具范围
 #视觉抓取修正参数
@@ -74,7 +75,7 @@ def armAPP():
           joint_positions = response.ik_solutions[0].positions
           arm.set_joint_value_target(joint_positions)       
           rospy.sleep(0.1)
-          # arm.setGripper(True)
+          arm.setGripper(True)
           rospy.sleep(0.1)
           # 移动到预抓取位
           joint_positions = response.ik_solutions[1].positions
@@ -82,7 +83,7 @@ def armAPP():
           rospy.sleep(0.1)
           arm.arm_goHome()
           rospy.sleep(1)
-          # arm.setGripper(False)
+          arm.setGripper(False)
       time.sleep(1)
 
 if __name__ == '__main__':
