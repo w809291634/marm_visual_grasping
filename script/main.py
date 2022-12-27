@@ -1,14 +1,6 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
-##############################################################################################
-# 文件：main.py
-# 作者：Zonesion wanghao 20220412
-# 说明：aiarm 主应用程序
-# 修改：20221206   初始版本  
-#       
-# 注释：主要实现与vnode进行通讯
-##############################################################################################
 import rospy
 import time
 import copy 
@@ -52,11 +44,44 @@ class AiArm(Arm):
         self.tf_listener = tf.TransformListener()
         self.cam=RealsenseCamera()
 
-    def app():
-      pos=cam.LocObject()
-      print(pos)
-      time.sleep(1) 
-      
+def armAPP():
+    arm=AiArm(this.g_open)
+    arm.all_gohome()  
+    while not rospy.is_shutdown(): 
+      pos=arm.cam.LocObject() 
+      if pos!=None:
+        Object_pose=Pose()
+        Object_pose.position.x=pos.point.x   #物块x坐标
+        Object_pose.position.y=pos.point.y  #物块y坐标     
+        Object_pose.position.z=pos.point.z    #物块z坐标 
+        Object_pose.orientation.x=0
+        Object_pose.orientation.y=0
+        Object_pose.orientation.z=0
+        Object_pose.orientation.w=1
+        response = arm.Solutions_client(Object_pose)   #向服务器查询机械臂最佳的抓取姿态
+        arm.cam.close_win()
+        if  len(response.ik_solutions[0].positions)>0:
+          arm.arm_goHome()
+          rospy.sleep(0.1)
+          # 移动到预抓取位
+          joint_positions = response.ik_solutions[1].positions
+          arm.set_joint_value_target(joint_positions)
+          rospy.sleep(0.1)
+          # 移动到抓取位
+          joint_positions = response.ik_solutions[0].positions
+          arm.set_joint_value_target(joint_positions)       
+          rospy.sleep(0.1)
+          arm.setGripper(True)
+          rospy.sleep(0.1)
+          # 移动到预抓取位
+          joint_positions = response.ik_solutions[1].positions
+          arm.set_joint_value_target(joint_positions)
+          rospy.sleep(0.1)
+          arm.arm_goHome()
+          rospy.sleep(1)
+          arm.setGripper(False)
+      time.sleep(1)
+
 if __name__ == '__main__':
     def quit(signum, frame):
         print('EXIT APP') 
@@ -65,8 +90,6 @@ if __name__ == '__main__':
     signal.signal(signal.SIGINT, quit)                          
     signal.signal(signal.SIGTERM, quit)
     rospy.init_node("MARM_GRASP_NODE", log_level=rospy.INFO)         #初始化节点
-    aiarm=AiArm(this.g_open)
-    while True:
-      time.sleep(99999)
+    armAPP()
 
 

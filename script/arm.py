@@ -100,7 +100,7 @@ class Arm(object):
         self.arm.go(wait)
         rospy.sleep(1)
         self.setGripper(False)             
-        rospy.loginfo("Open the fixture")
+        print("Open the fixture")
         self.current_pos='all_home'
 
     def arm_goHome(self,wait=True):
