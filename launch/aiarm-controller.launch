@@ -1,0 +1,91 @@
+<launch>
+
+  <!-- By default, we do not start a database (it can be large) -->
+  <arg name="db" default="false" />
+  <!-- Allow user to specify database location -->
+  <arg name="db_path" default="$(find marm_moveit_config)/default_warehouse_mongo_db" />
+
+  <!-- By default, we are not in debug mode -->
+  <arg name="debug" default="false" />
+
+  <!--
+  By default, hide joint_state_publisher's GUI
+
+  MoveIt!'s "demo" mode replaces the real robot driver with the joint_state_publisher.
+  The latter one maintains and publishes the current joint configuration of the simulated robot.
+  It also provides a GUI to move the simulated robot around "manually".
+  This corresponds to moving around the real robot without the use of MoveIt.
+  -->
+  <arg name="use_gui" default="false" />
+
+  <!-- Load the URDF, SRDF and other .yaml configuration files on the param server -->
+  <include file="$(find marm_moveit_config)/launch/planning_context.launch">
+    <arg name="load_robot_description" value="true"/>
+  </include>
+
+  <!-- If needed, broadcast static tf for robot root -->
+  
+  <!-- We do not have a robot connected, so publish fake joint states -->
+  <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher">
+    <param name="use_gui" value="$(arg use_gui)"/>
+    <rosparam param="source_list">[xcar/arm_joint_states]</rosparam>
+  </node>
+
+  <!-- Given the published joint states, publish tf for the robot links -->
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" respawn="true" output="screen" />
+
+  <include file="$(find mbot)/launch/serial-node.launch"/> 
+  <node name="arm_controller_node" pkg="marm_controller" type="arm_controller.py" output="screen"/>
+
+  <!-- Run the main MoveIt! executable without trajectory execution (we do not have controllers configured by default) -->
+  <include file="$(find marm_moveit_config)/launch/move_group.launch">
+    <arg name="allow_trajectory_execution" value="true"/>
+    <arg name="fake_execution" value="false"/>
+    <arg name="info" value="true"/>
+    <arg name="debug" value="$(arg debug)"/>
+  </include>
+
+  <!-- Run Rviz and load the default config to see the state of the move_group node -->
+  <!-- <include file="$(find marm_moveit_config)/launch/moveit_rviz.launch">
+    <arg name="config" value="true"/>
+    <arg name="debug" value="$(arg debug)"/>
+  </include> -->
+
+  <!-- If database loading was enabled, start mongodb as well -->
+  <include file="$(find marm_moveit_config)/launch/default_warehouse_db.launch" if="$(arg db)">
+    <arg name="moveit_warehouse_database_path" value="$(arg db_path)"/>
+  </include>
+
+  <!-- Launch grap_test_rviz.launch to visualize this test -->
+
+  <!-- Debug -->  
+  <arg unless="$(arg debug)" name="launch_prefix" value="" />
+  <arg     if="$(arg debug)" name="launch_prefix" value="gdb --ex run --args" />
+
+   <!--Load the URDF, SRDF and other .yaml configuration files on the param server 
+  <include file="$(find marm_moveit_config)/launch/planning_context.launch">
+    <arg name="load_robot_description" value="true"/>
+  </include>-->
+
+  <!-- Verbose mode -->
+  <arg name="verbose" default="false" />
+  <arg unless="$(arg verbose)" name="command_args" value="" />
+  <arg     if="$(arg verbose)" name="command_args" value="--verbose" />
+
+  <!-- Which arm to use -->
+  <arg name="arm" default="manipulator"/>
+  <arg name="ee_group_name" default="gripper"/>
+
+  <!-- Start the test -->
+  <node name="grasp_filter_test" launch-prefix="$(arg launch_prefix)" pkg="moveit_simple_grasps" 
+	type="moveit_simple_grasps_filter_test" output="screen" args="$(arg command_args)">
+    <param name="arm" value="$(arg arm)"/>
+    <param name="ee_group_name" value="$(arg ee_group_name)"/>
+    <rosparam command="load" file="$(find moveit_simple_grasps)/config/marm_grasp_data.yaml"/>    
+    <rosparam command="load" file="$(find marm_moveit_config)/config/kinematics.yaml"/>
+  </node>
+
+  <!--发布静态相机坐标系-->
+  <node pkg="tf" type="static_transform_publisher" name="base_link_to_camera" args="0.14 0.04 0.2 -1.5707963  0  -1.5707963 base_link camera_link 50" />
+
+</launch>

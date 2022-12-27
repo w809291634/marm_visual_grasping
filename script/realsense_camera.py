@@ -7,10 +7,8 @@ import sys
 import tf         
 import cvwin
 import cv2
-import threading
 import time
 import numpy as np
-import copy
 from collections import OrderedDict
 import pyrealsense2 as rs
 from std_msgs.msg import String
@@ -28,22 +26,6 @@ with open(this.config_path, "r") as f:
   else:    
     config = yaml.load(f.read(), Loader=yaml.FullLoader)
 
-def max_word(lt):
-  # 定义一个字典，用于保存每个元素及出现的次数
-  d = {}
-  # 记录做大的元素(字典的键)
-  max_key = None
-  for w in lt:
-    if w not in d:
-      # 统计该元素在列表中出现的次数
-      count = lt.count(w)
-      # 以元素作为键，次数作为值，保存到字典中
-      d[w] = count
-      # 记录最大元素
-      if d.get(max_key, 0) < count:
-        max_key = w
-  return max_key,d
-
 class RealsenseCamera(object):
     def __init__(self, MARGIN_PIX=7):
       from obj_detection_rk3588 import detection
@@ -52,7 +34,6 @@ class RealsenseCamera(object):
       self.window_name='camera'
       self.camera_link="camera_link"
       self.open_wins=[]
-      self.__camera_enable=False
       self.camera_init(424,240)
       self.tf_listener = tf.TransformListener()
       self.tf_listener.waitForTransform("base_link", self.camera_link, rospy.Time(0), rospy.Duration(1))
@@ -105,6 +86,22 @@ class RealsenseCamera(object):
           self.color_data = np.asanyarray(self.color_frame.get_data())        #/camera/color/image_raw
           self.dep_data= np.asanyarray(self.aligned_depth_frame.get_data())   #/camera/aligned_depth_to_color/image_raw
 
+    def max_word(self,lt):
+      # 定义一个字典，用于保存每个元素及出现的次数
+      d = {}
+      # 记录做大的元素(字典的键)
+      max_key = None
+      for w in lt:
+        if w not in d:
+          # 统计该元素在列表中出现的次数
+          count = lt.count(w)
+          # 以元素作为键，次数作为值，保存到字典中
+          d[w] = count
+          # 记录最大元素
+          if d.get(max_key, 0) < count:
+            max_key = w
+      return max_key,d
+
     def Depth_data(self,pos,hp,wp,minDeep=135,maxDeep=1000,range_key=2,grade=0.9):  #获取位置坐标系下的深度数据
         '''
         pos[0]  x坐标，单位pixels
@@ -129,7 +126,7 @@ class RealsenseCamera(object):
         if(list_deep!=[]):
             max_length=(2*hp)*(2*wp)
             length=len(list_deep)               #获取深度数据的长度，长度不一定
-            max_key,d=max_word(list_deep)
+            max_key,d=self.max_word(list_deep)
             # print 'max_key,d:',max_key,d
             m=0
             for i in range(int(max_key)-range_key, int(max_key)+range_key+1):
@@ -138,7 +135,7 @@ class RealsenseCamera(object):
                     m+=d.get(i)
             point=float(m)/length               #深度列表数据最多的总长度比值
             point1=float(length)/max_length     #深度数据的有效长度
-            print("point:%f,point1:%f"%(point,point1))
+            # print("point:%f,point1:%f"%(point,point1))
             if point>grade and point1>grade:
                 return int(max_key)
             else :
@@ -155,7 +152,7 @@ class RealsenseCamera(object):
         转换方法1
         # 0.022698268315 0.0291117414051 0.178  
         '''
-        # 相机内参 通过命令获取
+        # 相机内参 
         camera_factor = 1000.0                  #深度数据单位为mm，除以1000转换为m
         camera_cx = self.intr.ppx               #图像坐标系中心点x坐标，单位mm
         camera_cy = self.intr.ppy               #图像坐标系中心点y坐标，单位mm
@@ -206,19 +203,19 @@ class RealsenseCamera(object):
                 return False
         return False
 
-    def __open_win(self,img):
+    def open_win(self,img):
         if self.__win_is_open(self.window_name)==False:    
             self.open_wins.append(self.window_name)
         cvwin.imshow(self.window_name,img)
 
-    def __close_win(self):
+    def close_win(self):
         if self.__win_is_open(self.window_name)==True:
             cvwin.destroyWindow(self.window_name)
             self.open_wins.remove(self.window_name)
 
     def object_detect(self):
         (_, rets, types, pp) = self.findObj.predict_resize(self.color_data) 
-        #寻找分值最大的
+        # 寻找分值最大的
         maxval = 0
         box=[]
         type = ""
@@ -227,7 +224,7 @@ class RealsenseCamera(object):
                 maxval = pp[i]      
                 box = rets[i]      
                 type = types[i]
-        #使用绿色方框描述分值最大者
+        # 使用绿色方框描述分值最大者
         if len(box)>0 :
             rect = box                         
             if rect[2]>self.MARGIN_PIX*2 and rect[3] > self.MARGIN_PIX*2:   #宽度大于两倍的边缘和长度大于两倍边缘
@@ -237,14 +234,14 @@ class RealsenseCamera(object):
                 rect2 = np.array([])        
         else:
             rect2 = np.array([])            
-        self.__open_win(self.color_data)
+        self.open_win(self.color_data)
         return rect2,type       #绿色方框，左上角的坐标,和物体的宽度\高度，单位pixels
 
-    def __locObject(self, wait=None): #等待目标识别，并获取目标三维坐标，wait为等待超时时间
+    def __locObject(self):      
       #刷新相机数据
       self.camera_data()      
       #目标检测  
-      pix_pos,_=self.object_detect() #绿色方框，左上角的坐标,和物体的宽度\高度，单位pixels
+      pix_pos,_=self.object_detect()                  #绿色方框，左上角的坐标,和物体的宽度\高度，单位pixels
       #深度处理
       if len(pix_pos) > 0 and pix_pos[0]-30 > 0:      #物体宽度大于30像素
           pos_center=(pix_pos[0] + pix_pos[2] / 2, pix_pos[1] + pix_pos[3] / 2 )         #中心点
@@ -265,7 +262,7 @@ class RealsenseCamera(object):
       stTime = time.time()
       __lastcam_pos = []
       while  len(__lastcam_pos)<5:
-          __camera_pos = self.__locObject()                 #相机坐标系
+          __camera_pos = self.__locObject()                
           if __camera_pos == -1 :
               if wait != None and time.time()-stTime > wait:
                   return None
@@ -288,10 +285,12 @@ class RealsenseCamera(object):
           sumy += Yc
           sumz += Zc
       num=len(__lastcam_pos)
-      camera_pos=(sumx/num,sumy/num,sumz/num)         #稳定的相机坐标系下的目标
-      pos="%.3f/%.3f/%.3f"%(camera_pos[0],camera_pos[1],camera_pos[2])
-      print(pos)
-
+      #稳定的相机坐标系
+      camera_pos=[sumx/num,sumy/num,sumz/num]    
+      #相机坐标系转换为世界坐标系    
+      pos=self.camera2world(camera_pos)
+      return pos
+      
     def stopCamera(self):
       self.pipeline.stop()
 
@@ -307,7 +306,8 @@ if __name__ == '__main__':
     rospy.init_node('REALSENSE2', log_level=rospy.INFO )
     cam=RealsenseCamera()
     while True:
-      cam.LocObject()
+      pos=cam.LocObject()
+      print(pos)
       time.sleep(1)
 
     
