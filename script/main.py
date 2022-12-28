@@ -52,7 +52,7 @@ def armAPP():
     arm=AiArm(this.g_open)
     arm.all_gohome()  
     while not rospy.is_shutdown(): 
-      pos=arm.cam.LocObject(err=this.err,x_factor=this.x_factor)    #目标定位
+      pos=arm.cam.LocObject(wait=None,err=this.err,x_factor=this.x_factor)# 阻塞式获取目标定位
       if pos!=None:
         Object_pose=Pose()
         Object_pose.position.x=pos.point.x +this.x_offset     
@@ -62,7 +62,7 @@ def armAPP():
         Object_pose.orientation.y=0
         Object_pose.orientation.z=0
         Object_pose.orientation.w=1
-        response = arm.Solutions_client(Object_pose)                #向服务器查询机械臂最佳的抓取姿态
+        response = arm.Solutions_client(Object_pose)                      # 向服务器查询机械臂最佳的抓取姿态
         arm.cam.close_win()
         if  len(response.ik_solutions[0].positions)>0:
           arm.arm_goHome()
