@@ -27,10 +27,11 @@ with open(this.config_path, "r") as f:
     config = yaml.load(f.read(), Loader=yaml.FullLoader)
 
 class RealsenseCamera(object):
-    def __init__(self, MARGIN_PIX=7):
+    def __init__(self,obj_width=0.03, MARGIN_PIX=7):
       from obj_detection_rk3588 import detection
       self.findObj = detection.YoloV5RKNNDetector("wooden_medicine")  #初始化目标检测类
       self.MARGIN_PIX = MARGIN_PIX
+      self.obj_width=obj_width      #目标宽度
       self.window_name='camera'
       self.camera_link="camera_link"
       self.open_wins=[]
@@ -252,7 +253,7 @@ class RealsenseCamera(object):
       if depth_center!=-1 :
           print("Center pixel:",pos_center,"center depth:",depth_center) 
       #转换相机坐标系
-          camera_pos=self.pixel2camera_api(pos_center[0],pos_center[1],depth_center) 
+          camera_pos=self.pixel2camera_api(pos_center[0],pos_center[1],depth_center+self.obj_width/2)    # 加上木块宽度
           return camera_pos     
       else:
           print("Incomplete object depth data!")
@@ -286,7 +287,8 @@ class RealsenseCamera(object):
           sumz += Zc
       num=len(__lastcam_pos)
       #稳定的相机坐标系
-      camera_pos=[sumx/num*x_factor,sumy/num,sumz/num]    
+      camera_pos=[sumx/num*x_factor,sumy/num,sumz/num]    #x:左右，y上下，z表示前后
+      print("Object camera_pos:%s"%camera_pos)
       #相机坐标系转换为世界坐标系    
       pos=self.camera2world(camera_pos)
       return pos
@@ -304,7 +306,7 @@ if __name__ == '__main__':
     signal.signal(signal.SIGINT, quit)                                
     signal.signal(signal.SIGTERM, quit)
     rospy.init_node('REALSENSE2', log_level=rospy.INFO )
-    cam=RealsenseCamera()
+    cam=RealsenseCamera(0.03)
     while True:
       pos=cam.LocObject()
       # print(pos)
