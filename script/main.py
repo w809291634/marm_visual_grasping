@@ -114,10 +114,12 @@ def armAPP():
           rospy.sleep(0.1)
           # 移动到预抓取位
           joint_positions = response.ik_solutions[1].positions
+          print("pre_grasp_pos:%s"%str(joint_positions))
           arm.set_joint_value_target(joint_positions)
           rospy.sleep(0.1)
           # 移动到抓取位
           joint_positions = response.ik_solutions[0].positions
+          print("grasp_pos:%s"%str(joint_positions))
           arm.set_joint_value_target(joint_positions)       
           rospy.sleep(0.1)
           arm.setGripper(True)
