@@ -248,7 +248,6 @@ class RealsenseCamera(object):
           pos_center=(pix_pos[0] + pix_pos[2] / 2, pix_pos[1] + pix_pos[3] / 2 )         #中心点
           depth_center= self.Depth_data(pos_center,self.MARGIN_PIX,self.MARGIN_PIX)      #pos像素坐标(x,y)
       else:
-          print("Target detection error!")
           return -1  
       if depth_center!=-1 :
           print("Center pixel:",pos_center,"center depth:",depth_center) 
@@ -259,7 +258,7 @@ class RealsenseCamera(object):
           print("Incomplete object depth data!")
           return -1                
 
-    def LocObject(self,wait=20,err=0.003,x_factor=1.0):                            #目标识别及稳定性确认
+    def LocObject(self,wait=20,err=0.003,x_factor=1.0,Deviation_band=0.02):                            #目标识别及稳定性确认
       stTime = time.time()
       __lastcam_pos = []
       while  len(__lastcam_pos)<5:
@@ -287,7 +286,11 @@ class RealsenseCamera(object):
           sumz += Zc
       num=len(__lastcam_pos)
       #稳定的相机坐标系
+      # if(abs(sumx/num)) > Deviation_band:                   # 目标位于相机视野两端
       camera_pos=[sumx/num*x_factor,sumy/num,sumz/num]    #x:左右，y上下，z表示前后
+      #   print("use Deviation_band")
+      # else:
+      #   camera_pos=[sumx/num,sumy/num,sumz/num]             #x:左右，y上下，z表示前后
       print("Object camera_pos:%s"%camera_pos)
       #相机坐标系转换为世界坐标系    
       pos=self.camera2world(camera_pos)

@@ -35,10 +35,10 @@ this.g_open=-20                       # 定义夹具打开时的角度
 this.gripper_ty= True                 # 夹具极性
 this.g_range=[-130,130]               # 底层夹具范围
 #视觉抓取修正参数
-this.x_offset=0.005                       # 相机坐标系的平移修正
-this.y_offset=0           
-this.z_offset=0
-this.x_factor=1.2                     # x轴上中心点两侧放大
+this.x_offset=0.005                   # 相机坐标系的平移修正
+this.y_offset=-0.005            
+this.z_offset=-0.005
+this.c_x_factor=1.3                   # 相机坐标系x轴上中心点两侧放大
 this.err=0.003                        # 稳定性检查
 this.obj_width=0.03                   # 木块宽度
 
@@ -53,8 +53,8 @@ def LocObject_test():
     arm=AiArm(this.g_open)
     arm.all_gohome()  
     while not rospy.is_shutdown(): 
-      pos=arm.cam.LocObject(wait=None,err=this.err,x_factor=this.x_factor)# 阻塞式获取目标定位
-      print(pos)
+      pos=arm.cam.LocObject(wait=None,err=this.err,x_factor=this.c_x_factor)# 阻塞式获取目标定位
+      print("Object world_pos:%s"%pos)
       if pos!=None:
         Object_pose=Pose()
         Object_pose.position.x=pos.point.x +this.x_offset     
@@ -64,6 +64,7 @@ def LocObject_test():
         Object_pose.orientation.y=0
         Object_pose.orientation.z=0
         Object_pose.orientation.w=1
+        print("Object opt_world_pos: x:%f y:%f z:%f"%(Object_pose.position.x,Object_pose.position.y,Object_pose.position.z))
         response = arm.Solutions_client(Object_pose)                      # 向服务器查询机械臂最佳的抓取姿态
         arm.cam.close_win()
         if  len(response.ik_solutions[0].positions)>0:
@@ -71,10 +72,12 @@ def LocObject_test():
           rospy.sleep(0.1)
           # 移动到预抓取位
           joint_positions = response.ik_solutions[1].positions
+          print("pre_grasp_pos:%s"%str(joint_positions))
           arm.set_joint_value_target(joint_positions)
           rospy.sleep(0.1)
           # 移动到抓取位
           joint_positions = response.ik_solutions[0].positions
+          print("grasp_pos:%s"%str(joint_positions))
           arm.set_joint_value_target(joint_positions)       
           rospy.sleep(0.1)
           # arm.setGripper(True)
@@ -92,8 +95,8 @@ def armAPP():
     arm=AiArm(this.g_open)
     arm.all_gohome()  
     while not rospy.is_shutdown(): 
-      pos=arm.cam.LocObject(wait=None,err=this.err,x_factor=this.x_factor)# 阻塞式获取目标定位
-      print("Object world pos:%s"%pos)
+      pos=arm.cam.LocObject(wait=None,err=this.err,x_factor=this.c_x_factor)# 阻塞式获取目标定位
+      print("Object world_pos:%s"%pos)
       if pos!=None:
         Object_pose=Pose()
         Object_pose.position.x=pos.point.x +this.x_offset     
@@ -103,6 +106,7 @@ def armAPP():
         Object_pose.orientation.y=0
         Object_pose.orientation.z=0
         Object_pose.orientation.w=1
+        print("Object opt_world_pos: x:%f y:%f z:%f"%(Object_pose.position.x,Object_pose.position.y,Object_pose.position.z))
         response = arm.Solutions_client(Object_pose)                      # 向服务器查询机械臂最佳的抓取姿态
         arm.cam.close_win()
         if  len(response.ik_solutions[0].positions)>0:
