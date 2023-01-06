@@ -286,11 +286,7 @@ class RealsenseCamera(object):
           sumz += Zc
       num=len(__lastcam_pos)
       #稳定的相机坐标系
-      # if(abs(sumx/num)) > Deviation_band:                   # 目标位于相机视野两端
       camera_pos=[sumx/num*x_factor,sumy/num,sumz/num]        #x:左右，y上下，z表示前后
-      #   print("use Deviation_band")
-      # else:
-      #   camera_pos=[sumx/num,sumy/num,sumz/num]             #x:左右，y上下，z表示前后
       print("Object camera_pos:%s"%camera_pos)
       #相机坐标系转换为世界坐标系    
       pos=self.camera2world(camera_pos)
