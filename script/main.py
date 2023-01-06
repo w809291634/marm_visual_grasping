@@ -142,7 +142,7 @@ if __name__ == '__main__':
     signal.signal(signal.SIGINT, quit)                          
     signal.signal(signal.SIGTERM, quit)
     rospy.init_node("MARM_GRASP_NODE", log_level=rospy.INFO)         #初始化节点
-    # armAPP()
-    LocObject_test()
+    armAPP()
+    # LocObject_test()
 
 
