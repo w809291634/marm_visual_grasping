@@ -35,9 +35,10 @@ this.g_open=-20                       # 定义夹具打开时的角度
 this.gripper_ty= True                 # 夹具极性
 this.g_range=[-130,130]               # 底层夹具范围
 #视觉抓取修正参数
+#每个机械臂由于机械零点可能导致不一样
 this.x_offset=0.005                   # 相机坐标系的平移修正
-this.y_offset=-0.005            
-this.z_offset=-0.005
+this.y_offset=0.01                    # 机械臂抓取位置向左增加0.01
+this.z_offset=-0.01
 this.c_x_factor=1.3                   # 相机坐标系x轴上中心点两侧放大
 this.err=0.003                        # 稳定性检查
 this.obj_width=0.03                   # 木块宽度
@@ -141,7 +142,7 @@ if __name__ == '__main__':
     signal.signal(signal.SIGINT, quit)                          
     signal.signal(signal.SIGTERM, quit)
     rospy.init_node("MARM_GRASP_NODE", log_level=rospy.INFO)         #初始化节点
-    armAPP()
-    # LocObject_test()
+    # armAPP()
+    LocObject_test()
 
 
